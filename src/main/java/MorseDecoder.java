@@ -55,6 +55,10 @@ public class MorseDecoder {
         for (int binIndex = 0; binIndex < totalBinCount; binIndex++) {
             // Get the right number of samples from the inputFile
             // Sum all the samples together and store them in the returnBuffer
+            inputFile.readFrames(sampleBuffer, BIN_SIZE);
+            for (double buff : sampleBuffer) {
+                returnBuffer[binIndex] += Math.abs(buff);
+            }
         }
         return returnBuffer;
     }
@@ -68,7 +72,7 @@ public class MorseDecoder {
     /**
      * Convert power measurements to dots, dashes, and spaces.
      * <p>
-     * This function receives the result from binWavPower. It's job is to convert intervals of tone
+     * This function receives the result from binWavPower. Its job is to convert intervals of tone
      * or silence into dots (short tone), dashes (long tone), or space (long silence).
      * <p>
      * Write this function.
@@ -81,13 +85,45 @@ public class MorseDecoder {
          * There are four conditions to handle. Symbols should only be output when you see
          * transitions. You will also have to store how much power or silence you have seen.
          */
-
+        String output = "";
+        boolean wasPower = false;
+        int powers = 0;
+        int silences = 0;
+        for (double pwr : powerMeasurements) {
+            if (pwr > POWER_THRESHOLD) {
+                if (wasPower) {
+                    powers++;
+                }
+                else {
+                    if (silences >= DASH_BIN_COUNT){
+                        output += " ";
+                    }
+                    powers++;
+                    wasPower = true;
+                }
+                silences = 0;
+            } else {
+                silences++;
+                if (wasPower) {
+                    if (powers >= DASH_BIN_COUNT) {
+                        output += "-";
+                    }
+                    else {
+                        output += ".";
+                    }
+                    wasPower = false;
+                    powers = 0;
+                }
+            }
+        }
         // if ispower and waspower
         // else if ispower and not waspower
         // else if issilence and wassilence
         // else if issilence and not wassilence
 
-        return "";
+
+
+        return output;
     }
 
     /**
